@@ -1,0 +1,519 @@
+C51 COMPILER V9.59.0.0   TSSD1306                                                          04/03/2019 02:45:13 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE TSSD1306
+OBJECT MODULE PLACED IN .\Objects\TSSD1306.obj
+COMPILER INVOKED BY: D:\Keil_v5\C51\BIN\C51.EXE TSSD1306.c COMPACT OPTIMIZE(9,SIZE) BROWSE INCDIR(.\Include) DEFINE(FOSC
+                    -_160000) DEBUG OBJECTEXTEND PRINT(.\Listings\TSSD1306.lst) TABS(2) OBJECT(.\Objects\TSSD1306.obj)
+
+line level    source
+
+   1          #include "Common.h"
+   2          #include "delay.h"
+   3          #include "TSSD1306.h"
+   4          #include "i2c_handler.h"
+   5          #include "stdio.h"
+   6          
+   7          uint8_t OLED_WIDTH = 128;
+   8          uint8_t OLED_HEIGHT=64;
+   9          uint8_t OLED_ADD=0x78;
+  10          uint8_t OLED_Col_Offset=0;
+  11          uint8_t SSD1306_COMPINMODE=0x02;
+  12          uint8_t OLED_currLine=0,OLED_currCol=0;
+  13          uint8_t ActiveFont = 1,ACTIVE_FONT_WIDTH=3,mPlex=0x3F;
+  14          
+  15          
+  16          //power up Sequence
+  17          #define SSD1306_SETLOWCOLUMN 0x00
+  18          /** Set Higher Column Start Address for Page Addressing Mode. */
+  19          #define SSD1306_SETHIGHCOLUMN 0x10
+  20          /** Set Memory Addressing Mode. */
+  21          #define SSD1306_MEMORYMODE 0x20
+  22          /** Set display RAM display start line register from 0 - 63. */
+  23          #define SSD1306_SETSTARTLINE 0x40
+  24          /** Set Display Contrast to one of 256 steps. */
+  25          #define SSD1306_SETCONTRAST 0x81
+  26          /** Enable or disable charge pump.  Follow with 0X14 enable, 0X10 disable. */
+  27          #define SSD1306_CHARGEPUMP 0x8D
+  28          /** Set Segment Re-map between data column and the segment driver. */
+  29          #define SSD1306_SEGREMAP 0xA0
+  30          /** Resume display from GRAM content. */
+  31          #define SSD1306_DISPLAYALLON_RESUME 0xA4
+  32          /** Force display on regardless of GRAM content. */
+  33          #define SSD1306_DISPLAYALLON 0xA5
+  34          /** Set Normal Display. */
+  35          #define SSD1306_NORMALDISPLAY 0xA6
+  36          /** Set Inverse Display. */
+  37          #define SSD1306_INVERTDISPLAY 0xA7
+  38          /** Set Multiplex Ratio from 16 to 63. */
+  39          #define SSD1306_SETMULTIPLEX 0xA8
+  40          /** Set Display off. */
+  41          #define SSD1306_DISPLAYOFF 0xAE
+  42          /** Set Display on. */
+  43          #define SSD1306_DISPLAYON 0xAF
+  44          /**Set GDDRAM Page Start Address. */
+  45          #define SSD1306_SETSTARTPAGE 0XB0
+  46          /** Set COM output scan direction normal. */
+  47          #define SSD1306_COMSCANINC 0xC0
+  48          /** Set COM output scan direction reversed. */
+  49          #define SSD1306_COMSCANDEC 0xC8
+  50          /** Set Display Offset. */
+  51          #define SSD1306_SETDISPLAYOFFSET 0xD3
+  52          /** Sets COM signals pin configuration to match the OLED panel layout. */
+  53          #define SSD1306_SETCOMPINS 0xDA
+  54          /** This command adjusts the VCOMH regulator output. */
+C51 COMPILER V9.59.0.0   TSSD1306                                                          04/03/2019 02:45:13 PAGE 2   
+
+  55          #define SSD1306_SETVCOMDETECT 0xDB
+  56          /** Set Display Clock Divide Ratio/ Oscillator Frequency. */
+  57          #define SSD1306_SETDISPLAYCLOCKDIV 0xD5
+  58          /** Set Pre-charge Period */
+  59          #define SSD1306_SETPRECHARGE 0xD9
+  60          /** No Operation Command. */
+  61          #define SSD1306_NOP 0XE3
+  62          
+  63          
+  64          
+  65          
+  66          
+  67          #define CMDS  0x00
+  68          #define CMD   0x80
+  69          #define DATS  0x40
+  70          #define DAT   0xC0
+  71          #define ACTIVE_FONT_SPACING 1
+  72          
+  73          
+  74          const uint8_t code font[2][475] =
+  75          {
+  76            {
+  77            0x00, 0x00, 0x00, 0x00, 0x00, // SPACE
+  78            0x00, 0x00, 0x5F, 0x00, 0x00, // !
+  79            0x00, 0x03, 0x00, 0x03, 0x00, // "
+  80            0x14, 0x3E, 0x14, 0x3E, 0x14, // #
+  81            0x24, 0x2A, 0x7F, 0x2A, 0x12, // $
+  82            0x43, 0x33, 0x08, 0x66, 0x61, // %
+  83            0x36, 0x49, 0x55, 0x22, 0x50, // &
+  84            0x00, 0x05, 0x03, 0x00, 0x00, // '
+  85            0x00, 0x1C, 0x22, 0x41, 0x00, // (
+  86            0x00, 0x41, 0x22, 0x1C, 0x00, // )
+  87            0x14, 0x08, 0x3E, 0x08, 0x14, // *
+  88            0x08, 0x08, 0x3E, 0x08, 0x08, // +
+  89            0x00, 0x50, 0x30, 0x00, 0x00, // ,
+  90            0x08, 0x08, 0x08, 0x08, 0x08, // -
+  91            0x00, 0x60, 0x60, 0x00, 0x00, // .
+  92            0x20, 0x10, 0x08, 0x04, 0x02, // /
+  93            0x3E, 0x51, 0x49, 0x45, 0x3E, // 0
+  94            0x00, 0x04, 0x02, 0x7F, 0x00, // 1
+  95            0x42, 0x61, 0x51, 0x49, 0x46, // 2
+  96            0x22, 0x41, 0x49, 0x49, 0x36, // 3
+  97            0x18, 0x14, 0x12, 0x7F, 0x10, // 4
+  98            0x27, 0x45, 0x45, 0x45, 0x39, // 5
+  99            0x3E, 0x49, 0x49, 0x49, 0x32, // 6
+ 100            0x01, 0x01, 0x71, 0x09, 0x07, // 7
+ 101            0x36, 0x49, 0x49, 0x49, 0x36, // 8
+ 102            0x26, 0x49, 0x49, 0x49, 0x3E, // 9
+ 103            0x00, 0x36, 0x36, 0x00, 0x00, // :
+ 104            0x00, 0x56, 0x36, 0x00, 0x00, // ;
+ 105            0x08, 0x14, 0x22, 0x41, 0x00, // <
+ 106            0x14, 0x14, 0x14, 0x14, 0x14, // =
+ 107            0x00, 0x41, 0x22, 0x14, 0x08, // >
+ 108            0x02, 0x01, 0x51, 0x09, 0x06, // ?
+ 109            0x3E, 0x41, 0x59, 0x55, 0x5E, // @
+ 110            0x7E, 0x09, 0x09, 0x09, 0x7E, // A
+ 111            0x7F, 0x49, 0x49, 0x49, 0x36, // B
+ 112            0x3E, 0x41, 0x41, 0x41, 0x22, // C
+ 113            0x7F, 0x41, 0x41, 0x41, 0x3E, // D
+ 114            0x7F, 0x49, 0x49, 0x49, 0x41, // E
+ 115            0x7F, 0x09, 0x09, 0x09, 0x01, // F
+ 116            0x3E, 0x41, 0x41, 0x49, 0x3A, // G
+C51 COMPILER V9.59.0.0   TSSD1306                                                          04/03/2019 02:45:13 PAGE 3   
+
+ 117            0x7F, 0x08, 0x08, 0x08, 0x7F, // H
+ 118            0x00, 0x41, 0x7F, 0x41, 0x00, // I
+ 119            0x30, 0x40, 0x40, 0x40, 0x3F, // J
+ 120            0x7F, 0x08, 0x14, 0x22, 0x41, // K
+ 121            0x7F, 0x40, 0x40, 0x40, 0x40, // L
+ 122            0x7F, 0x02, 0x0C, 0x02, 0x7F, // M
+ 123            0x7F, 0x02, 0x04, 0x08, 0x7F, // N
+ 124            0x3E, 0x41, 0x41, 0x41, 0x3E, // O
+ 125            0x7F, 0x09, 0x09, 0x09, 0x06, // P
+ 126            0x1E, 0x21, 0x21, 0x21, 0x5E, // Q
+ 127            0x7F, 0x09, 0x09, 0x09, 0x76, // R
+ 128            0x26, 0x49, 0x49, 0x49, 0x32, // S
+ 129            0x01, 0x01, 0x7F, 0x01, 0x01, // T
+ 130            0x3F, 0x40, 0x40, 0x40, 0x3F, // U
+ 131            0x1F, 0x20, 0x40, 0x20, 0x1F, // V
+ 132            0x7F, 0x20, 0x10, 0x20, 0x7F, // W
+ 133            0x41, 0x22, 0x1C, 0x22, 0x41, // X
+ 134            0x07, 0x08, 0x70, 0x08, 0x07, // Y
+ 135            0x61, 0x51, 0x49, 0x45, 0x43, // Z
+ 136            0x00, 0x7F, 0x41, 0x00, 0x00, // [
+ 137            0x02, 0x04, 0x08, 0x10, 0x20, // backslash
+ 138            0x00, 0x00, 0x41, 0x7F, 0x00, // ]
+ 139            0x04, 0x02, 0x01, 0x02, 0x04, // ^
+ 140            0x40, 0x40, 0x40, 0x40, 0x40, // _
+ 141            0x00, 0x01, 0x02, 0x04, 0x00, // `
+ 142            0x20, 0x54, 0x54, 0x54, 0x78, // a
+ 143            0x7F, 0x44, 0x44, 0x44, 0x38, // b
+ 144            0x38, 0x44, 0x44, 0x44, 0x44, // c
+ 145            0x38, 0x44, 0x44, 0x44, 0x7F, // d
+ 146            0x38, 0x54, 0x54, 0x54, 0x18, // e
+ 147            0x04, 0x04, 0x7E, 0x05, 0x05, // f
+ 148            0x08, 0x54, 0x54, 0x54, 0x3C, // g
+ 149            0x7F, 0x08, 0x04, 0x04, 0x78, // h
+ 150            0x00, 0x44, 0x7D, 0x40, 0x00, // i
+ 151            0x20, 0x40, 0x44, 0x3D, 0x00, // j
+ 152            0x7F, 0x10, 0x28, 0x44, 0x00, // k
+ 153            0x00, 0x41, 0x7F, 0x40, 0x00, // l
+ 154            0x7C, 0x04, 0x78, 0x04, 0x78, // m
+ 155            0x7C, 0x08, 0x04, 0x04, 0x78, // n
+ 156            0x38, 0x44, 0x44, 0x44, 0x38, // o
+ 157            0x7C, 0x14, 0x14, 0x14, 0x08, // p
+ 158            0x08, 0x14, 0x14, 0x14, 0x7C, // q
+ 159            0x00, 0x7C, 0x08, 0x04, 0x04, // r
+ 160            0x48, 0x54, 0x54, 0x54, 0x20, // s
+ 161            0x04, 0x04, 0x3F, 0x44, 0x44, // t
+ 162            0x3C, 0x40, 0x40, 0x20, 0x7C, // u
+ 163            0x1C, 0x20, 0x40, 0x20, 0x1C, // v
+ 164            0x3C, 0x40, 0x30, 0x40, 0x3C, // w
+ 165            0x44, 0x28, 0x10, 0x28, 0x44, // x
+ 166            0x0C, 0x50, 0x50, 0x50, 0x3C, // y
+ 167            0x44, 0x64, 0x54, 0x4C, 0x44, // z
+ 168            0x00, 0x08, 0x36, 0x41, 0x41, // {
+ 169            0x00, 0x00, 0x7F, 0x00, 0x00, // |
+ 170            0x41, 0x41, 0x36, 0x08, 0x00, // }
+ 171            0x02, 0x01, 0x02, 0x04, 0x02, // ~
+ 172          }
+ 173          ,{
+ 174            0x00,0x00,0x00, //
+ 175            0x00,0x5c,0x00, // !
+ 176            0x0C,0x00,0x0C, // "
+ 177            0x7C,0x28,0x7C, // #
+ 178            0x28,0x7C,0x14, // $
+C51 COMPILER V9.59.0.0   TSSD1306                                                          04/03/2019 02:45:13 PAGE 4   
+
+ 179            0x24,0x10,0x48, // %
+ 180            0x3C,0x5C,0x70, // &
+ 181            0x00,0x0C,0x00, // '
+ 182            0x00,0x38,0x44, // (
+ 183            0x44,0x38,0x00, // )
+ 184            0x14,0x08,0x14, // *
+ 185            0x10,0x38,0x10, // +
+ 186            0x40,0x20,0x00, // ,
+ 187            0x10,0x10,0x10, // -
+ 188            0x00,0x40,0x00, // .
+ 189            0x60,0x10,0x0C, // /
+ 190            0x78,0x44,0x3C, // 0
+ 191            0x08,0x7C,0x00, // 1
+ 192            0x64,0x54,0x48, // 2
+ 193            0x44,0x54,0x28, // 3
+ 194            0x1C,0x10,0x7C, // 4
+ 195            0x5C,0x54,0x24, // 5
+ 196            0x78,0x54,0x74, // 6
+ 197            0x64,0x14,0x0C, // 7
+ 198            0x7C,0x54,0x7C, // 8
+ 199            0x5C,0x54,0x3C, // 9
+ 200            0x00,0x28,0x00, // :
+ 201            0x40,0x28,0x00, // ;
+ 202            0x10,0x28,0x44, // <
+ 203            0x28,0x28,0x28, // =
+ 204            0x44,0x28,0x10, // >
+ 205            0x04,0x54,0x0C, // ?
+ 206            0x38,0x54,0x58, // @
+ 207            0x78,0x14,0x78, // A
+ 208            0x7C,0x54,0x28, // B
+ 209            0x38,0x44,0x44, // C
+ 210            0x7C,0x44,0x38, // D
+ 211            0x7C,0x54,0x54, // E
+ 212            0x7C,0x14,0x14, // F
+ 213            0x38,0x54,0x74, // G
+ 214            0x7C,0x10,0x7C, // H
+ 215            0x44,0x7C,0x44, // I
+ 216            0x20,0x40,0x3C, // J
+ 217            0x7C,0x10,0x6C, // K
+ 218            0x7C,0x40,0x40, // L
+ 219            0x7C,0x18,0x7C, // M
+ 220            0x7C,0x38,0x7C, // N
+ 221            0x38,0x44,0x38, // O
+ 222            0x7C,0x14,0x08, // P
+ 223            0x38,0x64,0x78, // Q
+ 224            0x7C,0x34,0x58, // R
+ 225            0x48,0x54,0x24, // S
+ 226            0x04,0x7C,0x04, // T
+ 227            0x3C,0x40,0x7C, // U
+ 228            0x1C,0x20,0x1C, // V
+ 229            0x7C,0x30,0x7C, // W
+ 230            0x6C,0x10,0x6C, // X
+ 231            0x0C,0x70,0x0C, // Y
+ 232            0x64,0x54,0x4C, // Z
+ 233            0x7C,0x44,0x44, // [
+ 234            0x08,0x10,0x20, // (backspace)
+ 235            0x44,0x44,0x7C, // ]
+ 236            0x08,0x04,0x08, // ^
+ 237            0x40,0x40,0x40, // _
+ 238            0x04,0x08,0x00, // `
+ 239            0x68,0x58,0x70, // a
+ 240            0x7C,0x48,0x30, // b
+C51 COMPILER V9.59.0.0   TSSD1306                                                          04/03/2019 02:45:13 PAGE 5   
+
+ 241            0x30,0x48,0x48, // c
+ 242            0x30,0x48,0x7C, // d
+ 243            0x30,0x68,0x58, // e
+ 244            0x10,0x78,0x14, // f
+ 245            0x30,0xA8,0x78, // g
+ 246            0x7C,0x08,0x70, // h
+ 247            0x00,0x74,0x00, // i
+ 248            0x40,0x80,0x74, // j
+ 249            0x7C,0x30,0x48, // k
+ 250            0x44,0x7C,0x40, // l
+ 251            0x78,0x38,0x78, // m
+ 252            0x78,0x08,0x70, // n
+ 253            0x30,0x48,0x30, // o
+ 254            0xF8,0x48,0x30, // p
+ 255            0x30,0x48,0xF8, // q
+ 256            0x70,0x08,0x08, // r
+ 257            0x50,0x78,0x28, // s
+ 258            0x08,0x7C,0x48, // t
+ 259            0x38,0x40,0x78, // u
+ 260            0x38,0x60,0x38, // v
+ 261            0x78,0x70,0x78, // w
+ 262            0x48,0x30,0x48, // x
+ 263            0x18,0xA0,0x78, // y
+ 264            0x68,0x78,0x58, // z
+ 265            0x10,0x6C,0x44, // {
+ 266            0x00,0x6C,0x00, // |
+ 267            0x44,0x6C,0x10, // }
+ 268            0x08,0x0C,0x04, //
+ 269          
+ 270          }
+ 271          };
+ 272          
+ 273          void OLED_Settings(uint8_t oAdd,uint8_t width, uint8_t height)
+ 274          {
+ 275   1        OLED_WIDTH = width;
+ 276   1        OLED_HEIGHT = height;
+ 277   1        OLED_ADD=oAdd;
+ 278   1        if(OLED_HEIGHT > 32)  SSD1306_COMPINMODE = 0x12;
+ 279   1        else  SSD1306_COMPINMODE = 0x02;
+ 280   1        if(OLED_HEIGHT == 32) mPlex = 0x1F;
+ 281   1        else if(OLED_HEIGHT == 48)
+ 282   1        {
+ 283   2          mPlex = 0x2F;
+ 284   2          OLED_Col_Offset = 32;
+ 285   2        }
+ 286   1        else mPlex = 0x3F;
+ 287   1      }
+ 288          
+ 289          void OLED_SetFont(uint8_t fnt)
+ 290          {
+ 291   1        ActiveFont=fnt;
+ 292   1        if(fnt == 0)
+ 293   1          ACTIVE_FONT_WIDTH = 5;
+ 294   1        else
+ 295   1          ACTIVE_FONT_WIDTH = 3;
+ 296   1      }
+ 297          void OLED_Init()
+ 298          {
+ 299   1        i2c_init();
+ 300   1        i2c_start(OLED_ADD);
+ 301   1        i2c_write(CMDS);
+ 302   1        i2c_write(SSD1306_DISPLAYOFF);
+C51 COMPILER V9.59.0.0   TSSD1306                                                          04/03/2019 02:45:13 PAGE 6   
+
+ 303   1        i2c_write(SSD1306_SETDISPLAYCLOCKDIV);
+ 304   1        i2c_write(0x80);
+ 305   1        
+ 306   1        i2c_write(SSD1306_SETMULTIPLEX);
+ 307   1        i2c_write(mPlex);
+ 308   1        
+ 309   1        i2c_write(SSD1306_SETDISPLAYOFFSET | 0x00);
+ 310   1        
+ 311   1        i2c_write(SSD1306_SETSTARTLINE | 0x00);
+ 312   1        
+ 313   1        i2c_write(SSD1306_CHARGEPUMP);
+ 314   1        i2c_write(0x14);
+ 315   1        
+ 316   1        i2c_write(0x20);
+ 317   1        i2c_write(0x02);
+ 318   1        
+ 319   1        i2c_write(SSD1306_SEGREMAP | 0x01);
+ 320   1        
+ 321   1        i2c_write(SSD1306_COMSCANDEC);
+ 322   1        
+ 323   1        i2c_write(SSD1306_SETCOMPINS);
+ 324   1        i2c_write(SSD1306_COMPINMODE);    //Set to 0x12 if height is bigger than 32
+ 325   1        
+ 326   1        i2c_write(SSD1306_SETCONTRAST);
+ 327   1        i2c_write(0x80);
+ 328   1        
+ 329   1        i2c_write(SSD1306_SETPRECHARGE);
+ 330   1        i2c_write(0xF1);
+ 331   1        
+ 332   1        i2c_write(SSD1306_SETVCOMDETECT);
+ 333   1        i2c_write(0x40);
+ 334   1        
+ 335   1        i2c_write(0xA6);
+ 336   1        i2c_write(0xA4);
+ 337   1        
+ 338   1        i2c_write(0x21);
+ 339   1        i2c_write(0x0);
+ 340   1        i2c_write(OLED_WIDTH-1);
+ 341   1        
+ 342   1        i2c_write(0x22);
+ 343   1        i2c_write(0);
+ 344   1        i2c_write((OLED_HEIGHT/8)-1);
+ 345   1        
+ 346   1        i2c_write(0xAF);
+ 347   1        i2c_stop();
+ 348   1      //  OLED_Clear();
+ 349   1      //  OLED_Write("With many thanx to :");
+ 350   1      //  Timer3_Delay100ms(6);
+ 351   1      //  OLED_SetCursor(2,8);
+ 352   1      //  OLED_SetFont(0);
+ 353   1      //  OLED_Write("Aftabrayaneh Staff");
+ 354   1      //  Timer3_Delay100ms(19);
+ 355   1      //  OLED_Clear();
+ 356   1      //  OLED_SetFont(1);
+ 357   1      //  OLED_Write("Written By :");
+ 358   1      //  OLED_SetFont(0);
+ 359   1      //  OLED_SetCursor(1,8);
+ 360   1      //  OLED_Write("Tirdad Sadri Nejad");
+ 361   1      //  OLED_SetCursor(3,0);
+ 362   1      //  OLED_Write("Tirdad_ms@hotmail.com");
+ 363   1      //  Timer3_Delay100ms(30);
+ 364   1      }
+C51 COMPILER V9.59.0.0   TSSD1306                                                          04/03/2019 02:45:13 PAGE 7   
+
+ 365          
+ 366          
+ 367          void OLED_SetCursor(uint8_t line,uint8_t column)
+ 368          {
+ 369   1        i2c_start(OLED_ADD);
+ 370   1        i2c_write(CMDS);
+ 371   1        
+ 372   1        i2c_write(0x21);
+ 373   1        i2c_write(column%OLED_WIDTH);
+ 374   1        i2c_write(OLED_WIDTH-1);
+ 375   1        
+ 376   1        i2c_write(0x22);
+ 377   1        i2c_write(line%(OLED_HEIGHT/8));
+ 378   1        i2c_write((OLED_HEIGHT/8)-1);
+ 379   1        i2c_stop();
+ 380   1        OLED_currLine = line;
+ 381   1        OLED_currCol   = column;
+ 382   1      }
+ 383          
+ 384          void OLED_ClearLine(uint8_t line)
+ 385          {
+ 386   1        uint8_t i;
+ 387   1        OLED_SetCursor(line,0);
+ 388   1        i2c_start(OLED_ADD);
+ 389   1        i2c_write(DATS);
+ 390   1        for (i=0; i<OLED_WIDTH;i++)
+ 391   1        {
+ 392   2          i2c_write(0x00);
+ 393   2        }
+ 394   1        i2c_stop();
+ 395   1        OLED_SetCursor(line,0);
+ 396   1      }
+ 397          
+ 398          
+ 399          void OLED_ClearField(uint8_t line, uint8_t bgn, uint8_t end)
+ 400          {
+ 401   1        uint8_t i;
+ 402   1        OLED_SetCursor(line,bgn);
+ 403   1        i2c_start(OLED_ADD);
+ 404   1        i2c_write(DATS);
+ 405   1        for (i=0;i<end;i++)
+ 406   1        {
+ 407   2          i2c_write(0x00);
+ 408   2        }
+ 409   1        i2c_stop();
+ 410   1        OLED_SetCursor(line,bgn);
+ 411   1      }
+ 412          
+ 413          void OLED_Clear()
+ 414          {
+ 415   1        uint8_t i,j;
+ 416   1        for (j=0; j<OLED_HEIGHT/8;j++)
+ 417   1        {
+ 418   2          OLED_SetCursor(j,0);
+ 419   2          i2c_start(OLED_ADD);
+ 420   2          i2c_write(DATS);
+ 421   2          for (i=0;i<OLED_WIDTH;i++)  i2c_write(0x00);
+ 422   2          i2c_stop();
+ 423   2        }
+ 424   1        OLED_SetCursor(0,0);
+ 425   1      }
+ 426          
+C51 COMPILER V9.59.0.0   TSSD1306                                                          04/03/2019 02:45:13 PAGE 8   
+
+ 427          void OLED_WriteChar(uint8_t oled_char)
+ 428          {
+ 429   1        uint8_t i;
+ 430   1        oled_char = oled_char-32;
+ 431   1        i2c_start(OLED_ADD);
+ 432   1        i2c_write(DATS);
+ 433   1        for (i=0; i<ACTIVE_FONT_WIDTH;i++)
+ 434   1        {
+ 435   2          i2c_write((font[ActiveFont][(oled_char*ACTIVE_FONT_WIDTH)+i]));
+ 436   2        }
+ 437   1        for(i=0;i<ACTIVE_FONT_SPACING;i++)
+ 438   1        {
+ 439   2          i2c_write(0x00);
+ 440   2        }
+ 441   1        i2c_stop();
+ 442   1        OLED_currCol += ACTIVE_FONT_WIDTH + ACTIVE_FONT_SPACING;
+ 443   1        if (OLED_currCol > OLED_WIDTH-(ACTIVE_FONT_SPACING + ACTIVE_FONT_WIDTH))
+ 444   1        {
+ 445   2          if(OLED_currLine < (OLED_HEIGHT/8)-1) 
+ 446   2          {
+ 447   3            OLED_SetCursor(OLED_currLine+1,0);
+ 448   3          }
+ 449   2          else 
+ 450   2          {
+ 451   3            OLED_Clear();
+ 452   3          }
+ 453   2        }
+ 454   1      }
+ 455          
+ 456          void OLED_Write(char const* str)
+ 457          {
+ 458   1        uint8_t i=0;
+ 459   1        
+ 460   1        while(str[i] != '\0')
+ 461   1        {
+ 462   2          OLED_WriteChar(str[i]);
+ 463   2          i++;
+ 464   2        }
+ 465   1      }
+ 466          void OLED_WriteINT(int num)
+ 467          {
+ 468   1        char buff[12];
+ 469   1        sprintf(buff,"%i",num);
+ 470   1        OLED_Write(buff);
+ 471   1      }
+ 472          void OLED_SetContrast(uint8_t cntr)
+ 473          {
+ 474   1        i2c_start(OLED_ADD) ;
+ 475   1        i2c_write(CMDS);
+ 476   1        i2c_write(SSD1306_SETCONTRAST);
+ 477   1        i2c_write(cntr);
+ 478   1        i2c_stop();
+ 479   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    835    ----
+   CONSTANT SIZE    =    953    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =     10      29
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+C51 COMPILER V9.59.0.0   TSSD1306                                                          04/03/2019 02:45:13 PAGE 9   
+
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

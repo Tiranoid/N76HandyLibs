@@ -1,0 +1,107 @@
+C51 COMPILER V9.59.0.0   TDS1307                                                           04/03/2019 02:45:12 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE TDS1307
+OBJECT MODULE PLACED IN .\Objects\TDS1307.obj
+COMPILER INVOKED BY: D:\Keil_v5\C51\BIN\C51.EXE TDS1307.c COMPACT OPTIMIZE(9,SIZE) BROWSE INCDIR(.\Include) DEFINE(FOSC_
+                    -160000) DEBUG OBJECTEXTEND PRINT(.\Listings\TDS1307.lst) TABS(2) OBJECT(.\Objects\TDS1307.obj)
+
+line level    source
+
+   1          /*
+   2           * TDS1307.cpp
+   3           *
+   4           * Created: 8/22/2018 1:11:19 AM
+   5           *  Author: BlackHand
+   6           */ 
+   7          
+   8          #define RTC_ADD_W 0xD0
+   9          #define RTC_ADD_R 0xD1
+  10          #include "Common.h"
+  11          #include "i2c_handler.h"
+  12          
+  13          
+  14          uint8_t BCD_toINT(uint8_t hex)
+  15          {
+  16   1        return(((hex & 0xF0) >> 4) * 10 + (hex & 0x0F));
+  17   1      }
+  18          
+  19          
+  20          void RTC_SetData(uint8_t item,uint8_t t_val)
+  21          {
+  22   1        i2c_start(RTC_ADD_W);
+  23   1        i2c_write(item);
+  24   1        i2c_write(t_val);
+  25   1        i2c_stop();
+  26   1      }
+  27          
+  28          void RTC_Set(uint8_t secs, uint8_t mins, uint8_t hours, uint8_t DayOfWeek, uint8_t Date, uint8_t month, ui
+             -nt8_t year)
+  29          {
+  30   1        i2c_start(RTC_ADD_W);
+  31   1        i2c_write(0x00);
+  32   1        i2c_write(secs);
+  33   1        i2c_write(mins);
+  34   1        i2c_write(hours);
+  35   1        i2c_write(DayOfWeek);
+  36   1        i2c_write(Date);
+  37   1        i2c_write(month);
+  38   1        i2c_write(year);
+  39   1        i2c_stop();
+  40   1      }
+  41          
+  42          void RTC_Settings(uint8_t sqw_GPIO_Output, uint8_t sqw_enable, uint8_t sqw_frq_1_4_8_32)
+  43          {
+  44   1        uint8_t DS1307_Settings = (sqw_GPIO_Output<<7) | (sqw_enable<<4) | (sqw_frq_1_4_8_32);
+  45   1        i2c_init();
+  46   1        i2c_start(RTC_ADD_W);
+  47   1        i2c_write(7);
+  48   1        i2c_write(DS1307_Settings);
+  49   1        i2c_stop();
+  50   1      }
+  51          
+  52          void RTC_Write_GPRAM(uint8_t ramAdd, uint8_t iData)
+  53          {
+C51 COMPILER V9.59.0.0   TDS1307                                                           04/03/2019 02:45:12 PAGE 2   
+
+  54   1        i2c_start(RTC_ADD_W);
+  55   1        i2c_write(8+ramAdd);
+  56   1        i2c_write(iData);
+  57   1        i2c_stop();
+  58   1      }
+  59          
+  60          uint8_t RTC_Read_GPRAM(uint8_t ramAdd)
+  61          {
+  62   1        uint8_t  ret;
+  63   1        i2c_start(RTC_ADD_W);
+  64   1        i2c_write(8+ramAdd);
+  65   1        i2c_restart(RTC_ADD_R);
+  66   1        ret = i2c_read(0);
+  67   1        i2c_stop();
+  68   1        return ret;
+  69   1      }
+  70          
+  71          uint8_t RTC_GetData(uint8_t item)
+  72          {
+  73   1        uint8_t ret;
+  74   1        i2c_start(RTC_ADD_W);
+  75   1        i2c_write(item);
+  76   1        i2c_restart(RTC_ADD_R);
+  77   1        ret = i2c_read(0);
+  78   1        i2c_stop();
+  79   1        return BCD_toINT(ret);
+  80   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    271    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----      16
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

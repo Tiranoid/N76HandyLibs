@@ -1,0 +1,180 @@
+C51 COMPILER V9.59.0.0   ONELINESYMBOLS                                                    04/03/2019 02:45:13 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE ONELINESYMBOLS
+OBJECT MODULE PLACED IN .\Objects\OneLineSymbols.obj
+COMPILER INVOKED BY: D:\Keil_v5\C51\BIN\C51.EXE OneLineSymbols.c COMPACT OPTIMIZE(9,SIZE) BROWSE INCDIR(.\Include) DEFIN
+                    -E(FOSC_160000) DEBUG OBJECTEXTEND PRINT(.\Listings\OneLineSymbols.lst) TABS(2) OBJECT(.\Objects\OneLineSymbols.obj)
+
+line level    source
+
+   1          #include "Common.h"
+   2          #include "i2c_handler.h"
+   3          #include "TSSD1306.h"
+   4          #include "OneLineSymbols.h"
+   5          
+   6          #define CMDS  0x00
+   7          #define CMD   0x80
+   8          #define DATS  0x40
+   9          #define DAT   0xC0
+  10          
+  11          #define BAT_WIDHT 15
+  12          const uint8_t code Battery[]  =
+  13          {
+  14            0x00,0x7E,0x42,0x42,0x66,0x3C,0x00
+  15          };
+  16          
+  17          const uint8_t code BatteryL0[]  =
+  18          {
+  19            0x42,0x42,0x42,0x42,0x42,0x42,0x42,0x42
+  20          };
+  21          const uint8_t code BatteryL1[]  =
+  22          {
+  23            0x5A,0x5A,0x42,0x42,0x42,0x42,0x42,0x42
+  24          };
+  25          const uint8_t code BatteryL2[]  =
+  26          {
+  27            0x5A,0x5A,0x42,0x5A,0x5A,0x42,0x42,0x42
+  28          };
+  29          const uint8_t code BatteryL3[]  =
+  30          {
+  31            0x5A,0x5A,0x42,0x5A,0x5A,0x42,0x5A,0x5A
+  32          };
+  33          void OLED_DrawBattery(uint8_t line,uint8_t col,uint8_t level)
+  34          {
+  35   1        uint8_t i;
+  36   1        OLED_SetCursor(line,col);
+  37   1        i2c_start(OLED_ADD);
+  38   1        i2c_write(DATS);
+  39   1        for (i=0; i<3;i++)
+  40   1        {
+  41   2          i2c_write(Battery[i]);
+  42   2        }
+  43   1        switch(level)
+  44   1        
+  45   1        {
+  46   2          case 0:
+  47   2          for ( i=0; i<8;i++)
+  48   2          {
+  49   3            i2c_write(BatteryL0[i]);
+  50   3          }
+  51   2          break;
+  52   2          case 1:
+  53   2          for ( i=0; i<8;i++)
+  54   2          {
+C51 COMPILER V9.59.0.0   ONELINESYMBOLS                                                    04/03/2019 02:45:13 PAGE 2   
+
+  55   3            i2c_write(BatteryL1[i]);
+  56   3          }
+  57   2          break;
+  58   2          case 2:
+  59   2          for ( i=0; i<8;i++)
+  60   2          {
+  61   3            i2c_write(BatteryL2[i]);
+  62   3          }
+  63   2          break;
+  64   2          case 3:
+  65   2          for ( i=0; i<8;i++)
+  66   2          {
+  67   3            i2c_write(BatteryL3[i]);
+  68   3          }
+  69   2          break;
+  70   2        }
+  71   1        for ( i=3; i<7;i++)
+  72   1        {
+  73   2          i2c_write(Battery[i]);
+  74   2        }
+  75   1        i2c_stop();
+  76   1      }
+  77          
+  78          #define ANT_WIDHT 15
+  79          const uint8_t code Antenna[]  =
+  80          {
+  81            //0x00,0x18,0x3C,0x3C,0x18,0x00,0x18,0x00,0x00,0x24,0x18,0x00,0x42,0x3C,0x00
+  82            0x00,0x00,0x40,0x40,0x00,0x60,0x60,0x00,0x78,0x78,0x00,0x7E,0x7E,0x00,0x00
+  83          };
+  84          
+  85          void OLED_DrawAntenna(uint8_t line,uint8_t col, uint8_t level)
+  86          {
+  87   1        uint8_t i;
+  88   1        OLED_SetCursor(line,col);
+  89   1        i2c_start(OLED_ADD);
+  90   1        i2c_write(DATS);
+  91   1        for ( i=0;i<5;i++)
+  92   1        {
+  93   2          i2c_write(Antenna[i]);
+  94   2        }
+  95   1        for ( i=5;i<5+(level*3);i++)
+  96   1        {
+  97   2          i2c_write(Antenna[i]);
+  98   2        }
+  99   1        i2c_write(0x00);
+ 100   1        i2c_stop();
+ 101   1      }
+ 102          
+ 103          
+ 104          
+ 105          #define MSG_WIDHT 15
+ 106          const uint8_t code Message[]  =
+ 107          {
+ 108            //0x00,0x5E,0x00,0x00,0x7E,0x7A,0x76,0x6E,0x6E,0x6E,0x6E,0x76,0x7A,0x7E,0x00
+ 109              0x00,0x5E,0x00,0x00,0x7E,0x46,0x4A,0x52,0x52,0x52,0x52,0x4A,0x46,0x7E,0x00
+ 110          };
+ 111          void OLED_DrawMessage(uint8_t line,uint8_t col)
+ 112          {
+ 113   1        uint8_t i;
+ 114   1        OLED_SetCursor(line,col);
+ 115   1        i2c_start(OLED_ADD);
+ 116   1        i2c_write(DATS);
+C51 COMPILER V9.59.0.0   ONELINESYMBOLS                                                    04/03/2019 02:45:13 PAGE 3   
+
+ 117   1        for ( i=0;i<MSG_WIDHT;i++)
+ 118   1        {
+ 119   2          i2c_write(Message[i]);
+ 120   2        }
+ 121   1        i2c_stop();
+ 122   1      }
+ 123          
+ 124          #define TRI_WIDHT 5
+ 125          const uint8_t code Triangle[]  =
+ 126          {
+ 127            0x00,0x7E,0x33,0x11,0x00
+ 128          };
+ 129          void OLED_DrawTriangle(uint8_t line,uint8_t col)
+ 130          {
+ 131   1        uint8_t i;
+ 132   1        OLED_SetCursor(line,col);
+ 133   1        i2c_start(OLED_ADD);
+ 134   1        i2c_write(DATS);
+ 135   1        for ( i=0;i<TRI_WIDHT;i++)
+ 136   1        {
+ 137   2          i2c_write(Triangle[i]);
+ 138   2        }
+ 139   1        i2c_stop();
+ 140   1      }
+ 141          
+ 142          void OLED_DrawSpacer(uint8_t line,uint8_t col,uint8_t offset)
+ 143          {
+ 144   1        uint8_t i;
+ 145   1        OLED_SetCursor(line,col);
+ 146   1        i2c_start(OLED_ADD);
+ 147   1        i2c_write(DATS);
+ 148   1        for ( i=0;i<offset;i++) i2c_write(0);
+ 149   1        i2c_write(0x7E);
+ 150   1        for ( i=0;i<offset+1;i++) i2c_write(0);
+ 151   1        i2c_stop();
+ 152   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    491    ----
+   CONSTANT SIZE    =     74    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----       8
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,100 @@
+C51 COMPILER V9.59.0.0   I2C_HANDLER                                                       04/03/2019 02:45:12 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE I2C_HANDLER
+OBJECT MODULE PLACED IN .\Objects\i2c_handler.obj
+COMPILER INVOKED BY: D:\Keil_v5\C51\BIN\C51.EXE i2c_handler.c COMPACT OPTIMIZE(9,SIZE) BROWSE INCDIR(.\Include) DEFINE(F
+                    -OSC_160000) DEBUG OBJECTEXTEND PRINT(.\Listings\i2c_handler.lst) TABS(2) OBJECT(.\Objects\i2c_handler.obj)
+
+line level    source
+
+   1          /*
+   2            i2c Handler for Nuvoton N76E003 microcontrollers
+   3            Written by Tirdad Sadri Nejad
+   4          
+   5            keeping my name written here on this header motivates me for such efforts.
+   6            
+   7            tirdad_ms@hotmail.com
+   8          */
+   9          
+  10          
+  11          #include "N76E003.h"
+  12          #include "Common.h"
+  13          #include "SFR_Macro.h"
+  14          #include "Function_define.h"
+  15          #include "i2c_handler.h"
+  16          
+  17          void i2c_init()
+  18          {
+  19   1        P13_OpenDrain_Mode;
+  20   1        P14_OpenDrain_Mode;
+  21   1        I2CLK = I2C_PRSC;
+  22   1        set_I2CEN; 
+  23   1      }
+  24          
+  25          bit i2c_write(uint8_t iData)
+  26          {
+  27   1        I2DAT = iData;
+  28   1        clr_SI;
+  29   1        while (!SI);
+  30   1        if (I2STAT != 0x28)   return 0;
+  31   1        else return 1;
+  32   1      }
+  33          
+  34          bit i2c_restart(uint8_t iAdd)
+  35          {
+  36   1        set_STA;
+  37   1        clr_SI; 
+  38   1        while (!SI);
+  39   1        if (I2STAT != 0x10)   return 0;
+  40   1        clr_STA;
+  41   1        I2DAT = iAdd;
+  42   1        clr_SI;
+  43   1        while (!SI);
+  44   1        if (I2STAT != 0x18 && I2STAT != 0x40)   return 0;
+  45   1        else return 1;
+  46   1      }
+  47          bit i2c_start(uint8_t iAdd)
+  48          {
+  49   1        set_STA;
+  50   1        clr_SI;
+  51   1        while (!SI);
+  52   1        if (I2STAT != 0x08)   return 0;
+  53   1        I2DAT = iAdd;
+  54   1        clr_STA;
+C51 COMPILER V9.59.0.0   I2C_HANDLER                                                       04/03/2019 02:45:12 PAGE 2   
+
+  55   1        clr_SI;
+  56   1        while (!SI);
+  57   1        if (I2STAT != 0x18 && I2STAT != 0x40)   return 0;
+  58   1        else return 1;
+  59   1      }
+  60          
+  61          void i2c_stop()
+  62          {
+  63   1        clr_SI;
+  64   1        set_STO;
+  65   1      }
+  66          
+  67          uint8_t i2c_read(uint8_t ack)
+  68          {
+  69   1        if(ack !=0) set_AA;
+  70   1        else clr_AA;
+  71   1        clr_SI;
+  72   1        while(!SI);
+  73   1        return I2DAT;
+  74   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    144    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,76 @@
+C51 COMPILER V9.59.0.0   MAIN                                                              04/03/2019 03:20:59 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: D:\Keil_v5\C51\BIN\C51.EXE main.c COMPACT OPTIMIZE(9,SIZE) BROWSE INCDIR(.\Include) DEFINE(FOSC_160
+                    -000) DEBUG OBJECTEXTEND PRINT(.\Listings\main.lst) TABS(2) OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1          #include "N76E003.h"
+   2          #include "SFR_Macro.h"
+   3          #include "Function_define.h"
+   4          #include "Common.h"
+   5          #include "delay.h"
+   6          #include "i2c_handler.h"
+   7          #include "TSSD1306.h"
+   8          #include "TDS1307.h"
+   9          #include "OneLineSymbols.h"
+  10          void main()
+  11          {
+  12   1        // Set I2C address, width and height. call it before OLED_Init
+  13   1        OLED_Settings(0x78,128, 64);
+  14   1        // initialize OLED
+  15   1        OLED_Init();
+  16   1        // Set contrast (1~255)
+  17   1        OLED_SetContrast(255);
+  18   1        // obviously clears OLED
+  19   1        OLED_Clear();
+  20   1        // switch between two fonts.
+  21   1        OLED_SetFont(0);
+  22   1        OLED_Write("Hello Nuvoton !");
+  23   1        // Sets cursor to (line (which is from 0 to OLED_hight/8) and column from 0 to OLED_width)
+  24   1        // in this case (128*64) we have 64/8=8 lines and 128 columns
+  25   1        OLED_SetCursor(1,0);
+  26   1        OLED_SetFont(1);
+  27   1        // Writes to the screen
+  28   1        OLED_Write("Here We Are !");
+  29   1        // draw some icons (line,column,value)
+  30   1        OLED_DrawMessage(2,114);
+  31   1        OLED_DrawBattery(1,114,2);
+  32   1        OLED_DrawAntenna(0,114,3);
+  33   1        OLED_SetCursor(2,0);
+  34   1        while(1)
+  35   1        {
+  36   2          OLED_ClearField(2,0,68);
+  37   2          OLED_WriteINT(RTC_GetData(2));
+  38   2          OLED_Write(":");
+  39   2          OLED_WriteINT(RTC_GetData(1));
+  40   2          OLED_Write(":");
+  41   2          OLED_WriteINT(RTC_GetData(0));
+  42   2          OLED_DrawSpacer(OLED_currLine,OLED_currCol,5);
+  43   2          OLED_WriteINT(RTC_GetData(4));
+  44   2          OLED_Write("/");
+  45   2          OLED_WriteINT(RTC_GetData(5));
+  46   2          OLED_Write("/20");
+  47   2          OLED_WriteINT(RTC_GetData(6));
+  48   2          Timer3_Delay100ms(8);
+  49   2        }
+  50   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    215    ----
+C51 COMPILER V9.59.0.0   MAIN                                                              04/03/2019 03:20:59 PAGE 2   
+
+   CONSTANT SIZE    =     38    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,11 @@
+".\Objects\main.obj",
+".\Objects\STARTUP.obj",
+".\Objects\i2c_handler.obj",
+".\Objects\Common.obj",
+".\Objects\Delay.obj",
+".\Objects\TDS1307.obj",
+".\Objects\TSSD1306.obj",
+".\Objects\OneLineSymbols.obj" 
+TO ".\Objects\N76E003Test" 
+PRINT(".\Listings\N76E003Test.m51") RAMSIZE(256) 
+DISABLEWARNING (16) 
